@@ -1,34 +1,48 @@
 const express = require('express');
 
 const PORT = 3001;
+const reviews = require('./db/reviews');
 
 const app = express();
 
-// GET request
+// Middleware for parsing application/json and urlencoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// GET request for ALL reviews
 app.get('/api/reviews', (req, res) => {
-  // Let the client know that their request was received
-  res.json(`${req.method} request received`);
-
-  // Show the user agent information in the terminal
-  console.info(req.rawHeaders);
-
   // Log our request to the terminal
-  console.info(`${req.method} request received`);
+  console.info(`${req.method} request received to get reviews`);
+
+  // Sending all reviews to the client
+  return res.json(reviews);
 });
 
-// POST request
+// POST request to add a review
 app.post('/api/reviews', (req, res) => {
-  // Let the client know that their POST request was received
-  res.json(`${req.method} request received`);
+  // Log that a POST request was received
+  console.info(`${req.method} request received to add a review`);
 
-  // Show the user agent information in the terminal
-  console.info(req.rawHeaders);
+  // Prepare a response object to send back to the client
+  let response;
 
-  // Log our request to the terminal
-  console.info(`${req.method} request received`);
+  // Check if there is anything in the response body
+  if (req.body && req.body.product) {
+    response = {
+      status: 'success',
+      data: req.body,
+    };
+    res.json(`Review for ${response.data.product} has been added!`);
+  } else {
+    res.json('Request body must at least contain a product name');
+  }
+
+  // Log the response body to the console
+  console.log(req.body);
 });
 
 app.listen(PORT, () =>
   console.log(`Express server listening on port ${PORT}!`)
 );
 
+//  http://localhost:3001
