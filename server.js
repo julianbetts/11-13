@@ -1,48 +1,64 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
+const util = require('util');
+const { readFromFile, readAndAppend } = require('./helpers/fsUtils');
+
+// Helper method for generating unique ids
+const uuid = require('./helpers/uuid');
+const apiRouter = ('./routes/index.js')
 
 const PORT = 3001;
-const reviews = require('./db/reviews');
 
 const app = express();
 
-// Middleware for parsing application/json and urlencoded data
+// Middleware for parsing JSON and urlencoded form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// GET request for ALL reviews
-app.get('/api/reviews', (req, res) => {
-  // Log our request to the terminal
-  console.info(`${req.method} request received to get reviews`);
+app.use(express.static('public'));
+app.use(('/api'), apiRouter)
 
-  // Sending all reviews to the client
-  return res.json(reviews);
-});
-
-// POST request to add a review
-app.post('/api/reviews', (req, res) => {
-  // Log that a POST request was received
-  console.info(`${req.method} request received to add a review`);
-
-  // Prepare a response object to send back to the client
-  let response;
-
-  // Check if there is anything in the response body
-  if (req.body && req.body.product) {
-    response = {
-      status: 'success',
-      data: req.body,
-    };
-    res.json(`Review for ${response.data.product} has been added!`);
-  } else {
-    res.json('Request body must at least contain a product name');
-  }
-
-  // Log the response body to the console
-  console.log(req.body);
-});
-
-app.listen(PORT, () =>
-  console.log(`Express server listening on port ${PORT}!`)
+// GET Route for homepage
+app.get('/', (req, res) =>
+  res.sendFile(path.join(__dirname, '/public/index.html'))
 );
 
-//  http://localhost:3001
+// GET Route for feedback page
+app.get('/feedback', (req, res) =>
+  res.sendFile(path.join(__dirname, '/public/pages/feedback.html'))
+);
+
+// GET Route for retrieving all the tips
+app.get('/api/tips', (req, res) => {
+  console.info(`${req.method} request received for tips`);
+  readFromFile('./db/tips.json').then((data) => res.json(JSON.parse(data)));
+});
+
+// POST Route for a new UX/UI tip
+app.post('/api/tips', (req, res) => {
+  console.info(`${req.method} request received to add a tip`);
+
+  const { username, topic, tip } = req.body;
+
+  if (req.body) {
+    const newTip = {
+      username,
+      tip,
+      topic,
+      tip_id: uuid(),
+    };
+
+    readAndAppend(newTip, './db/tips.json');
+    res.json(`Tip added successfully 🚀`);
+  } else {
+    res.error('Error in adding tip');
+  }
+});
+
+// GET Route for retrieving all the feedback
+
+
+app.listen(PORT, () =>
+  console.log(`App listening at http://localhost:${PORT} 🚀`)
+);
